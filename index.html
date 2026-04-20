@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jogja One-Stop Maps - WebGIS Wisata Alam DIY</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0f9d84;
+      --primary-dark: #08715f;
+      --primary-light: #29c4a7;
+      --accent: #12b5cb;
+      --accent-soft: #dff9f4;
+      --dark: #0f172a;
+      --text-light: #ffffff;
+      --text-muted: #64748b;
+      --bg-light: #f6fbfa;
+      --bg-soft: #eef8f5;
+      --card-border: rgba(15, 157, 132, 0.14);
+      --upn-red: #c41e3a;
+      --upn-gold: #d4af37;
+      --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --shadow-medium: 0 18px 50px rgba(15, 23, 42, 0.14);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(41, 196, 167, 0.12), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(18, 181, 203, 0.10), transparent 22%),
+        linear-gradient(180deg, #fbfffe 0%, var(--bg-light) 100%);
+      color: var(--dark);
+      overflow-x: hidden;
+    }
+
+    body.map-open {
+      overflow: hidden;
+    }
+
+    .container {
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+.navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 18px 0;
+      transition: 0.3s ease;
+    }
+
+    .navbar.scrolled {
+      padding: 12px 0;
+    }
+
+    .nav-shell {
+      width: min(1220px, calc(100% - 26px));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 14px 20px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(255,255,255,0.55);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
+    }
+
+    .logo {
+      font-size: 1.55rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--primary-dark);
+      white-space: nowrap;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.35rem;
+      box-shadow: 0 10px 22px rgba(15, 157, 132, 0.28);
+      flex-shrink: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 30px;
+      list-style: none;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.95rem;
+      position: relative;
+      transition: 0.25s ease;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--primary-dark);
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -7px;
+      width: 0;
+      height: 3px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width 0.25s ease;
+    }
+
+    .nav-links a:hover::after,
+    .nav-links a.active::after {
+      width: 100%;
+    }
+
+    .btn-map-nav {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      padding: 13px 26px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      font-size: 0.92rem;
+      transition: 0.25s ease;
+      box-shadow: 0 12px 26px rgba(15, 157, 132, 0.24);
+      white-space: nowrap;
+    }
+
+    .btn-map-nav:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(15, 157, 132, 0.30);
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 14px;
+      background: rgba(15,157,132,0.12);
+      color: var(--primary-dark);
+      font-size: 1.3rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      padding-top: 110px;
+      background:
+        linear-gradient(118deg, rgba(4, 22, 33, 0.62) 0%, rgba(7, 97, 84, 0.50) 46%, rgba(18, 181, 203, 0.36) 100%),
+        url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: auto auto -180px -180px;
+      width: 480px;
+      height: 480px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 68%);
+      filter: blur(10px);
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: -130px;
+      right: -90px;
+      width: 520px;
+      height: 520px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(41,196,167,0.28), transparent 65%);
+      animation: floatGlow 8s ease-in-out infinite;
+    }
+
+    @keyframes floatGlow {
+      0%,100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(20px) translateX(-10px); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+      gap: 46px;
+      align-items: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 18px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.24);
+      backdrop-filter: blur(14px);
+      color: white;
+      font-size: 0.86rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.12);
+    }
+
+    .hero-text {
+      animation: fadeUp 0.9s ease both;
+    }
+
+    .hero-text h1 {
+      font-size: clamp(3rem, 7vw, 5.2rem);
+      line-height: 1.02;
+      margin-bottom: 18px;
+      color: white;
+      text-shadow: 0 10px 30px rgba(0,0,0,0.16);
+      letter-spacing: -2px;
+      max-width: 640px;
+    }
+
+    .hero-text p {
+      font-size: 1.08rem;
+      color: rgba(255,255,255,0.94);
+      line-height: 1.85;
+      margin-bottom: 30px;
+      max-width: 590px;
+      text-shadow: 0 4px 16px rgba(0,0,0,0.14);
+      font-weight: 500;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      min-width: 192px;
+      padding: 15px 28px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 0.96rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: 0.25s ease;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px solid transparent;
+    }
+
+    .btn-primary {
+      background: white;
+      color: var(--primary-dark);
+      box-shadow: 0 16px 34px rgba(0,0,0,0.12);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 38px rgba(0,0,0,0.18);
+    }
+
+    .btn-secondary {
+      color: white;
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.7);
+      backdrop-filter: blur(12px);
+    }
+
+    .btn-secondary:hover {
+      background: white;
+      color: var(--primary-dark);
+      transform: translateY(-3px);
+    }
+
+    .hero-side {
+      display: grid;
+      gap: 20px;
+      animation: fadeUp 1.15s ease both;
+    }
+
+    .hero-panel {
+      background: rgba(255,255,255,0.86);
+      border: 1px solid rgba(255,255,255,0.65);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-medium);
+      overflow: hidden;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 24px;
+    }
+
+    .stat {
+      text-align: center;
+      padding: 18px 12px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(15,157,132,0.08), rgba(18,181,203,0.04));
+      border: 1px solid rgba(15,157,132,0.10);
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary-dark), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .hero-mini-card {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 16px;
+      padding: 20px 24px;
+      align-items: center;
+    }
+
+    .hero-mini-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      background: linear-gradient(135deg, rgba(15,157,132,0.15), rgba(18,181,203,0.14));
+      color: var(--primary-dark);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+
+    .hero-mini-card h3 {
+      font-size: 1rem;
+      color: var(--dark);
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+
+    .hero-mini-card p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.65;
+    }
+
+    section {
+      padding: 110px 0;
+      position: relative;
+    }
+
+    section.alt {
+      background:
+        radial-gradient(circle at top right, rgba(18,181,203,0.05), transparent 18%),
+        linear-gradient(180deg, #effaf7 0%, #f7fcfb 100%);
+    }
+
+    section.premium {
+      background:
+        radial-gradient(circle at top left, rgba(15,157,132,0.05), transparent 22%),
+        linear-gradient(180deg, #ffffff 0%, #f6fbfa 100%);
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 70px;
+    }
+
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, rgba(15,157,132,0.08), rgba(18,181,203,0.08));
+      color: var(--primary-dark);
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(15,157,132,0.14);
+    }
+
+    .section-header h2 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 900;
+      margin-bottom: 16px;
+      color: var(--dark);
+      letter-spacing: -1.6px;
+      line-height: 1.1;
+    }
+
+    .section-header p {
+      font-size: 1.07rem;
+      color: var(--text-muted);
+      max-width: 780px;
+      margin: 0 auto;
+      line-height: 1.85;
+      font-weight: 500;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 26px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.92);
+      border-radius: 26px;
+      padding: 34px 28px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--card-border);
+      text-align: center;
+      transition: 0.28s ease;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: auto -40px -40px auto;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(41,196,167,0.14), transparent 70%);
+      opacity: 0.8;
+    }
+
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 42px rgba(15, 23, 42, 0.12);
+      border-color: rgba(15,157,132,0.22);
+    }
+
+    .card-icon {
+      width: 84px;
+      height: 84px;
+      border-radius: 24px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(15,157,132,0.12), rgba(18,181,203,0.10));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+      font-size: 2.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card h3 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: var(--primary-dark);
+      position: relative;
+      z-index: 1;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.8;
+      position: relative;
+      z-index: 1;
+    }
+
+    .destinations {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 28px;
+    }
+
+    .destination-card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 26px;
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--card-border);
+      transition: 0.28s ease;
+      position: relative;
+    }
+
+    .destination-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 24px 46px rgba(15, 23, 42, 0.12);
+      border-color: rgba(15,157,132,0.24);
+    }
+
+    .destination-image {
+      height: 245px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .destination-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.38));
+    }
+
+    .destination-image::before {
+      content: '';
+      position: absolute;
+      inset: auto -40px -60px auto;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.22), transparent 70%);
+      z-index: 1;
+    }
+
+    .destination-body {
+      padding: 24px;
+    }
+
+    .destination-body h3 {
+      font-size: 1.18rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      color: var(--primary-dark);
+    }
+
+    .destination-body p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: linear-gradient(135deg, rgba(15,157,132,0.10), rgba(18,181,203,0.08));
+      color: var(--primary-dark);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      border: 1px solid rgba(15,157,132,0.14);
+      letter-spacing: 0.2px;
+    }
+
+    footer {
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.10), transparent 20%),
+        linear-gradient(135deg, var(--upn-red), #8b1538);
+      color: white;
+      padding: 54px 0;
+      text-align: center;
+      border-top: 4px solid var(--upn-gold);
+    }
+
+    .footer-content p {
+      font-size: 0.95rem;
+      margin: 8px 0;
+      font-weight: 500;
+    }
+
+    .map-page {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: #f7fffc;
+      flex-direction: column;
+    }
+
+    .map-page.show {
+      display: flex;
+    }
+
+    .map-header {
+      background: linear-gradient(135deg, #0b7b68, #11b4aa);
+      color: white;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 10px 28px rgba(15, 157, 132, 0.26);
+      z-index: 1001;
+    }
+
+    .map-header h2 {
+      font-size: 1.25rem;
+      margin: 0;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+    }
+
+    .close-btn {
+      background: rgba(255,255,255,0.14);
+      border: 1.5px solid rgba(255,255,255,0.78);
+      color: white;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s ease;
+    }
+
+    .close-btn:hover {
+      background: rgba(255,255,255,0.24);
+      transform: rotate(90deg);
+    }
+
+    .map-wrapper {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .map-sidebar {
+      width: 360px;
+      background:
+        linear-gradient(180deg, rgba(7, 32, 40, 0.98), rgba(10, 51, 55, 0.98)),
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+      padding: 22px;
+      overflow-y: auto;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      box-shadow: inset -10px 0 28px rgba(0, 0, 0, 0.16);
+    }
+
+    .map-sidebar::-webkit-scrollbar,
+    .location-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .map-sidebar::-webkit-scrollbar-thumb,
+    .location-list::-webkit-scrollbar-thumb {
+      background: rgba(41,196,167,0.45);
+      border-radius: 999px;
+    }
+
+    .sidebar-section {
+      background: rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(14px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .sidebar-title {
+      font-weight: 800;
+      margin-bottom: 14px;
+      color: white;
+      font-size: 1rem;
+      letter-spacing: 0.3px;
+    }
+
+    .map-input,
+    .map-select {
+      width: 100%;
+      padding: 13px 15px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      font-family: 'Poppins', sans-serif;
+      transition: 0.2s ease;
+      background: rgba(255,255,255,0.08);
+      color: white;
+      appearance: none;
+    }
+
+    .map-input::placeholder {
+      color: rgba(255,255,255,0.55);
+    }
+
+    .map-input:focus,
+    .map-select:focus {
+      outline: none;
+      border-color: rgba(41,196,167,0.7);
+      background: rgba(41,196,167,0.12);
+      box-shadow: 0 0 0 3px rgba(41,196,167,0.16);
+    }
+
+    .map-select option {
+      background: #113339;
+      color: white;
+    }
+
+    .tag-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tag-btn {
+      background: transparent;
+      border: 1px solid rgba(41,196,167,0.4);
+      color: white;
+      padding: 9px 13px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .tag-btn.active,
+    .tag-btn:hover {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(15, 157, 132, 0.24);
+      border-color: transparent;
+    }
+
+    .rating-section {
+      margin-top: 14px;
+    }
+
+    .rating-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.88);
+    }
+
+    .rating-value {
+      font-weight: 700;
+      color: #8ef2e0;
+      font-size: 1rem;
+    }
+
+    .rating-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.16);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .rating-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent));
+      cursor: pointer;
+      box-shadow: 0 0 0 4px rgba(41,196,167,0.16);
+      border: 2px solid white;
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .action-btn {
+      padding: 12px 14px;
+      border: none;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .action-btn.show {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      box-shadow: 0 10px 22px rgba(15, 157, 132, 0.24);
+    }
+
+    .action-btn.reset {
+      background: rgba(255,255,255,0.08);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .action-btn.clear {
+      background: rgba(239,68,68,0.15);
+      color: #fecaca;
+      border: 1px solid rgba(248,113,113,0.20);
+    }
+
+    .action-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .location-list {
+      max-height: 330px;
+      overflow-y: auto;
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .location-item {
+      background: rgba(255,255,255,0.06);
+      padding: 14px;
+      border-radius: 16px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: 0.2s ease;
+      color: white;
+    }
+
+    .location-item:hover,
+    .location-item.active {
+      background: rgba(41,196,167,0.15);
+      border-color: rgba(41,196,167,0.32);
+      transform: translateX(3px);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.14);
+    }
+
+    .location-item-name {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+    }
+
+    .location-item-badge {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .location-item-info {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.72);
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    .map-main {
+      flex: 1;
+      position: relative;
+      background: #dff3f1;
+      min-height: 0;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: rgba(255,255,255,0.98) !important;
+      border-radius: 20px !important;
+      box-shadow: 0 18px 46px rgba(15, 23, 42, 0.18) !important;
+      padding: 0 !important;
+      overflow: hidden;
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(255,255,255,0.98) !important;
+    }
+
+    .leaflet-popup-content {
+      margin: 0 !important;
+      width: auto !important;
+      min-width: 280px;
+      max-width: 310px;
+      font-family: 'Poppins', sans-serif;
+      padding: 20px !important;
+    }
+
+    .popup-header {
+      font-size: 1.16rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+    }
+
+    .popup-rating {
+      color: #f59e0b;
+      font-size: 0.92rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .popup-section {
+      margin-bottom: 12px;
+    }
+
+    .popup-section-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--dark);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 5px;
+    }
+
+    .popup-section-text {
+      font-size: 0.88rem;
+      color: #64748b;
+      line-height: 1.65;
+    }
+
+    .popup-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .popup-badge {
+      background: linear-gradient(135deg, rgba(15,157,132,0.10), rgba(18,181,203,0.08));
+      color: var(--primary-dark);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      border: 1px solid rgba(15,157,132,0.14);
+    }
+
+    .popup-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      padding: 12px 16px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 0.84rem;
+      transition: 0.2s ease;
+      border: none;
+      cursor: pointer;
+      margin-top: 6px;
+      box-shadow: 0 10px 22px rgba(15, 157, 132, 0.22);
+    }
+
+    .popup-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: 0.7s ease;
+    }
+
+    .fade-in.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 1080px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+
+      .hero-side {
+        max-width: 720px;
+      }
+
+      .map-sidebar {
+        width: 320px;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .nav-links {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .nav-shell {
+        border-radius: 28px;
+      }
+
+      .navbar.mobile-open .nav-shell {
+        border-radius: 28px;
+      }
+
+      .navbar.mobile-open .nav-links {
+        display: flex;
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 14px;
+        right: 14px;
+        flex-direction: column;
+        gap: 16px;
+        background: rgba(255,255,255,0.94);
+        border: 1px solid rgba(255,255,255,0.7);
+        border-radius: 24px;
+        padding: 18px 20px;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+      }
+
+      .navbar.mobile-open .nav-links a::after {
+        display: none;
+      }
+
+      .btn-map-nav {
+        display: none;
+      }
+
+      .navbar.mobile-open .btn-map-nav {
+        display: inline-flex;
+        justify-content: center;
+      }
+
+      .hero {
+        padding-top: 126px;
+      }
+
+      .map-wrapper {
+        flex-direction: column;
+      }
+
+      .map-sidebar {
+        width: 100%;
+        max-height: 42vh;
+        border-right: none;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+      }
+
+      .map-main {
+        min-height: 58vh;
+      }
+    }
+
+    @media (max-width: 640px) {
+.navbar {
+        top: 0;
+      }
+
+      .nav-shell {
+        padding: 12px 14px;
+        width: calc(100% - 16px);
+        gap: 12px;
+      }
+
+      .logo {
+        font-size: 1.2rem;
+      }
+
+      .logo-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        font-size: 1.15rem;
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 118px;
+        padding-bottom: 72px;
+      }
+
+      .hero-badge {
+        font-size: 0.76rem;
+        padding: 9px 14px;
+      }
+
+      .hero-text p {
+        font-size: 0.97rem;
+      }
+
+      .hero-buttons {
+        flex-direction: column;
+      }
+
+      .btn-primary,
+      .btn-secondary {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .hero-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-mini-card {
+        grid-template-columns: 56px 1fr;
+        padding: 18px;
+      }
+
+      section {
+        padding: 74px 0;
+      }
+
+      .section-header {
+        margin-bottom: 46px;
+      }
+
+      .cards,
+      .destinations {
+        grid-template-columns: 1fr;
+      }
+
+      .card,
+      .destination-card {
+        border-radius: 22px;
+      }
+
+      .map-header {
+        padding: 16px 14px;
+      }
+
+      .map-header h2 {
+        font-size: 1rem;
+      }
+
+      .map-sidebar {
+        padding: 14px;
+        max-height: 48vh;
+      }
+
+      .sidebar-section {
+        border-radius: 18px;
+        padding: 16px;
+      }
+
+      .location-list {
+        max-height: none;
+      }
+
+      .leaflet-popup-content {
+        min-width: 245px;
+        max-width: 270px;
+        padding: 16px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar" id="navbar">
+    <div class="nav-shell">
+      <a href="#" class="logo">
+        <div class="logo-icon">🗺️</div>
+        <span>JOGJA MAPS</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#beranda" class="active">Beranda</a></li>
+        <li><a href="#tentang">Tentang</a></li>
+        <li><a href="#kategori">Kategori</a></li>
+        <li><a href="#destinasi">Destinasi</a></li>
+</ul>
+
+      <button class="btn-map-nav" onclick="openMapPage()">🗺️ Buka Peta</button>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">☰</button>
+    </div>
+  </nav>
+
+  <section class="hero" id="beranda">
+    <div class="container hero-content">
+      <div class="hero-grid">
+        <div class="hero-text">
+          <span class="hero-badge">🌍 WebGIS Pariwisata Yogyakarta</span>
+          <h1>Jogja One-Stop Maps</h1>
+          <p>Platform WebGIS modern untuk visualisasi dan eksplorasi wisata alam Yogyakarta dengan teknologi geospatial terdepan.</p>
+          <div class="hero-buttons">
+            <a href="#tentang" class="btn-primary">Tentang Platform</a>
+            <a href="#destinasi" class="btn-secondary">Lihat Destinasi</a>
+          </div>
+        </div>
+
+        <div class="hero-side">
+          <div class="hero-panel hero-stats">
+            <div class="stat">
+              <div class="stat-number">5</div>
+              <div class="stat-label">Kabupaten/Kota</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number">34+</div>
+              <div class="stat-label">Destinasi Wisata</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number">∞</div>
+              <div class="stat-label">Kemungkinan Eksplorasi</div>
+            </div>
+          </div>
+
+          <div class="hero-panel hero-mini-card">
+            <div class="hero-mini-icon">✨</div>
+            <div>
+              <h3>Eksplorasi Destinasi Alam DIY</h3>
+              <p>Nikmati pengalaman visual yang lebih modern untuk menjelajahi wisata alam Yogyakarta dengan tampilan yang lebih hidup dan ramah mobile.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tentang" class="premium fade-in">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Tentang Platform</span>
+        <h2>Sistem Informasi Geografis Wisata Alam DIY</h2>
+        <p>Platform WebGIS yang mengintegrasikan teknologi geospatial modern dengan database wisata alam lengkap untuk mendukung pengalaman pariwisata berkelanjutan.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt fade-in" id="kategori">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Klasifikasi Destinasi</span>
+        <h2>Kategori Wisata Alam</h2>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <span class="card-icon">🏖️</span>
+          <h3>Pantai & Pesisir</h3>
+          <p>Destinasi pantai dengan pasir putih, sunset spektakuler, dan aktivitas bahari lengkap untuk pengalaman tak terlupakan.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">💧</span>
+          <h3>Air Terjun</h3>
+          <p>Formasi geohidrologi alami yang menakjubkan dengan potensi wisata dan fotografi profesional yang tinggi.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">⛰️</span>
+          <h3>Gunung & Perbukitan</h3>
+          <p>Destinasi ketinggian dengan panorama spektakuler ideal untuk hiking, camping, dan menikmati sunrise-sunset.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">🌲</span>
+          <h3>Hutan & Konservasi</h3>
+          <p>Area konservasi alam dengan ekosistem unik untuk pengalaman ekowisata immersive dan relaksasi alam yang mendalam.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="destinasi" class="premium fade-in">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Rekomendasi</span>
+        <h2>Destinasi Unggulan</h2>
+      </div>
+
+      <div class="destinations">
+        <div class="destination-card">
+          <div class="destination-image" style="background-image:url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80');"></div>
+          <div class="destination-body">
+            <h3>Pantai Indrayanti</h3>
+            <p>Pantai pasir putih terindah di Yogyakarta dengan air jernih dan infrastruktur modern lengkap.</p>
+            <div class="badges">
+              <span class="badge">🏖️ Pesisir</span>
+              <span class="badge">⭐ 4.8/5</span>
+              <span class="badge">✓ Akses Mudah</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="destination-card">
+          <div class="destination-image" style="background-image:url('https://images.unsplash.com/photo-1506704720897-c6b0b8ef6dba?auto=format&fit=crop&w=600&q=80');"></div>
+          <div class="destination-body">
+            <h3>Air Terjun Sri Gethuk</h3>
+            <p>Air terjun spektakuler dengan formasi karst unik di tengah hutan lebat yang asri dan menakjubkan.</p>
+            <div class="badges">
+              <span class="badge">💧 Air Terjun</span>
+              <span class="badge">⭐ 4.6/5</span>
+              <span class="badge">⛰️ Adventure</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="destination-card">
+          <div class="destination-image" style="background-image:url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=600&q=80');"></div>
+          <div class="destination-body">
+            <h3>Hutan Pinus Mangunan</h3>
+            <p>Hutan pinus dengan panorama perbukitan indah menjadi spot foto Instagram terbaik di Yogyakarta.</p>
+            <div class="badges">
+              <span class="badge">🌲 Hutan</span>
+              <span class="badge">⭐ 4.6/5</span>
+              <span class="badge">📸 Fotografi</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container footer-content">
+      <p><strong>🎓 UPN "VETERAN" YOGYAKARTA</strong></p>
+      <p>Program Studi Teknik Geomatika • WebGIS Wisata Alam DIY</p>
+      <p style="font-size: 0.85rem; margin-top: 14px;">© 2026 Jogja One-Stop Maps | Geodesign & Geospatial Intelligence</p>
+    </div>
+  </footer>
+
+  <div class="map-page" id="mapPage">
+    <div class="map-header">
+      <h2>🗺️ Peta Interaktif Wisata Alam DIY</h2>
+      <button class="close-btn" onclick="closeMapPage()">✕</button>
+    </div>
+
+    <div class="map-wrapper">
+      <aside class="map-sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-title">📊 Pencarian & Filter</div>
+          <input type="text" id="searchInput" class="map-input" placeholder="Cari nama wisata, kabupaten, atau kata kunci...">
+          <select id="kabupatenFilter" class="map-select">
+            <option value="all">Semua Kabupaten</option>
+            <option value="Sleman">Sleman</option>
+            <option value="Bantul">Bantul</option>
+            <option value="Gunungkidul">Gunungkidul</option>
+            <option value="Kulon Progo">Kulon Progo</option>
+            <option value="Kota Yogyakarta">Kota Yogyakarta</option>
+          </select>
+          <select id="sortFilter" class="map-select">
+            <option value="rating-desc">Rating Tertinggi</option>
+            <option value="rating-asc">Rating Terendah</option>
+            <option value="name-asc">Nama (A-Z)</option>
+            <option value="name-desc">Nama (Z-A)</option>
+          </select>
+
+          <div class="sidebar-title" style="margin-top: 10px;">Kategori</div>
+          <div class="tag-buttons">
+            <button class="tag-btn active" onclick="filterCategory('all', this)">Semua</button>
+            <button class="tag-btn" onclick="filterCategory('Gunung', this)">Gunung</button>
+            <button class="tag-btn" onclick="filterCategory('Pantai', this)">Pantai</button>
+            <button class="tag-btn" onclick="filterCategory('Air Terjun', this)">Air Terjun</button>
+            <button class="tag-btn" onclick="filterCategory('Hutan', this)">Hutan</button>
+          </div>
+
+          <div class="rating-section">
+            <div class="rating-label">
+              <span>Minimal Rating</span>
+              <span class="rating-value" id="ratingValue">4.5</span>
+            </div>
+            <input type="range" id="ratingSlider" class="rating-slider" min="0" max="5" step="0.1" value="4.5" oninput="updateRating()">
+          </div>
+
+          <div class="action-buttons">
+            <button class="action-btn show" onclick="showAll()">Tampilkan Semua</button>
+            <button class="action-btn reset" onclick="resetMap()">Reset Peta</button>
+            <button class="action-btn clear" onclick="clearFilters()">Kosongkan</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">📌 Daftar Lokasi</div>
+          <p style="font-size: 0.85rem; color: rgba(255,255,255,0.72); margin-bottom: 12px; line-height: 1.65;">
+            Pilih lokasi untuk zoom ke peta dan membuka detail destinasi.
+          </p>
+          <div class="location-list" id="locationList"></div>
+        </div>
+      </aside>
+
+      <div class="map-main">
+        <div id="map"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    const wisataData = [
+      { name: 'Kaliurang', cat: 'Gunung', kab: 'Sleman', rating: 4.7, coords: [-7.6005, 110.4239], desc: 'Kawasan wisata lereng Merapi dengan udara sejuk.', detail: 'Lokasi ideal untuk hiking dan trekking gunung dengan pemandangan Merapi yang spektakuler dan udara pegunungan yang segar.', access: 'Akses Mudah - 20 menit dari pusat kota', price: 7500 },
+      { name: 'Hutan Pinus Mangunan', cat: 'Hutan', kab: 'Bantul', rating: 4.6, coords: [-7.9416, 110.4414], desc: 'Hutan pinus dengan spot foto Instagram terbaik.', detail: 'Area hutan yang asri dengan berbagai wahana, gardu pandang tinggi, dan pemandangan perbukitan yang menakjubkan untuk fotografi profesional.', access: 'Akses Baik - Dekat dengan pusat kota', price: 10000 },
+      { name: 'Pantai Parangtritis', cat: 'Pantai', kab: 'Bantul', rating: 4.5, coords: [-8.0246, 110.3298], desc: 'Pantai ikonik dengan sunset spektakuler.', detail: 'Pantai dengan pasir hitam halus, aktivitas pantai lengkap, fasilitas modern, dan pemandangan laut yang memukau sepanjang hari.', access: 'Akses Mudah - 30 menit dari pusat kota', price: 5000 },
+      { name: 'Pantai Indrayanti', cat: 'Pantai', kab: 'Gunungkidul', rating: 4.8, coords: [-8.1507, 110.6127], desc: 'Pantai pasir putih terindah Yogyakarta.', detail: 'Pantai dengan pasir putih kristal, air jernih yang ideal untuk diving dan snorkeling, serta infrastruktur wisata yang lengkap dan modern.', access: 'Akses Mudah - 60 menit dari pusat kota', price: 15000 },
+      { name: 'Air Terjun Sri Gethuk', cat: 'Air Terjun', kab: 'Gunungkidul', rating: 4.6, coords: [-7.9569, 110.5147], desc: 'Air terjun spektakuler dengan formasi karst unik.', detail: 'Air terjun alami dengan pemandangan batuan karst yang mengesankan, cocok untuk petualangan ekstrem dan fotografi lanskap profesional.', access: 'Akses Menantang - 45 menit, trekking medium', price: 12000 },
+      { name: 'Kedung Pedut', cat: 'Air Terjun', kab: 'Kulon Progo', rating: 4.5, coords: [-7.7923, 110.1219], desc: 'Wisata air dengan kolam alami indah.', detail: 'Area wisata air dengan kolam alami berair jernih, suasana pegunungan yang menenangkan, ideal untuk berenang dan relaksasi keluarga.', access: 'Akses Sedang - 50 menit dari pusat kota', price: 10000 },
+      { name: 'Bukit Klangon', cat: 'Gunung', kab: 'Sleman', rating: 4.7, coords: [-7.5827, 110.4478], desc: 'Viewpoint Merapi terbaik.', detail: 'Lokasi ideal dengan pemandangan Gunung Merapi yang sangat jelas, sempurna untuk sunrise, sunset, dan fotografi landscape premium yang menakjubkan.', access: 'Akses Mudah - 15 menit dari Sleman', price: 5000 },
+      { name: 'Kalibiru', cat: 'Hutan', kab: 'Kulon Progo', rating: 4.4, coords: [-7.8055, 110.1297], desc: 'Perbukitan dengan gardu pandang.', detail: 'Area wisata perbukitan dengan berbagai wahana bermain, gardu pandang tinggi, pemandangan alam yang sempurna, cocok untuk keluarga dan group adventure.', access: 'Akses Baik - 40 menit dari pusat kota', price: 8000 }
+    ];
+
+    let mapInstance = null;
+    let markerLayer = null;
+    let currentCategory = 'all';
+    let currentRating = 4.5;
+    let currentSort = 'rating-desc';
+    let activeLocationEl = null;
+
+    const colors = {
+      'Gunung': '#0f9d84',
+      'Pantai': '#0ea5e9',
+      'Air Terjun': '#14b8a6',
+      'Hutan': '#84cc16'
+    };
+
+    function openMapPage() {
+      document.getElementById('mapPage').classList.add('show');
+      document.body.classList.add('map-open');
+      setTimeout(() => {
+        if (!mapInstance) initMap();
+        else mapInstance.invalidateSize();
+      }, 120);
+    }
+
+    function closeMapPage() {
+      document.getElementById('mapPage').classList.remove('show');
+      document.body.classList.remove('map-open');
+    }
+
+    function initMap() {
+      if (mapInstance) return;
+
+      mapInstance = L.map('map', {
+        zoomControl: true
+      }).setView([-7.8, 110.4], 10);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(mapInstance);
+
+      markerLayer = L.layerGroup().addTo(mapInstance);
+
+      document.getElementById('searchInput').addEventListener('input', updateMap);
+      document.getElementById('kabupatenFilter').addEventListener('change', updateMap);
+      document.getElementById('sortFilter').addEventListener('change', (e) => {
+        currentSort = e.target.value;
+        updateMap();
+      });
+
+      updateMap();
+    }
+
+    function filterCategory(cat, el) {
+      currentCategory = cat;
+      document.querySelectorAll('.tag-btn').forEach(btn => btn.classList.remove('active'));
+      if (el) el.classList.add('active');
+      updateMap();
+    }
+
+    function updateRating() {
+      currentRating = parseFloat(document.getElementById('ratingSlider').value);
+      document.getElementById('ratingValue').textContent = currentRating.toFixed(1);
+      updateMap();
+    }
+
+    function sortData(data) {
+      const sorted = [...data];
+      switch (currentSort) {
+        case 'rating-desc':
+          sorted.sort((a, b) => b.rating - a.rating);
+          break;
+        case 'rating-asc':
+          sorted.sort((a, b) => a.rating - b.rating);
+          break;
+        case 'name-asc':
+          sorted.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case 'name-desc':
+          sorted.sort((a, b) => b.name.localeCompare(a.name));
+          break;
+      }
+      return sorted;
+    }
+
+    function getFilteredData() {
+      const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
+      const kab = document.getElementById('kabupatenFilter').value;
+
+      let filtered = wisataData.filter(w =>
+        (keyword === '' || w.name.toLowerCase().includes(keyword) || w.kab.toLowerCase().includes(keyword) || w.cat.toLowerCase().includes(keyword)) &&
+        (kab === 'all' || w.kab === kab) &&
+        (currentCategory === 'all' || w.cat === currentCategory) &&
+        (w.rating >= currentRating)
+      );
+
+      return sortData(filtered);
+    }
+
+    function updateMap() {
+      if (!markerLayer) return;
+
+      const filtered = getFilteredData();
+
+      markerLayer.clearLayers();
+      const locationList = document.getElementById('locationList');
+      locationList.innerHTML = '';
+      activeLocationEl = null;
+
+      filtered.forEach(w => {
+        const marker = L.circleMarker(w.coords, {
+          radius: 9,
+          fillColor: colors[w.cat],
+          color: '#ffffff',
+          weight: 3,
+          opacity: 1,
+          fillOpacity: 0.92
+        }).addTo(markerLayer);
+
+        marker.on('mouseover', () => {
+          marker.setStyle({ radius: 12, weight: 4 });
+        });
+
+        marker.on('mouseout', () => {
+          marker.setStyle({ radius: 9, weight: 3 });
+        });
+
+        marker.on('click', () => {
+          showDetail(w);
+          mapInstance.flyTo(w.coords, 13, { duration: 0.8 });
+        });
+
+        const item = document.createElement('div');
+        item.className = 'location-item';
+        item.innerHTML = `
+          <div class="location-item-name">
+            <span><b>${w.name}</b></span>
+            <span class="location-item-badge">${w.cat}</span>
+          </div>
+          <div class="location-item-info">
+            ${w.kab} • Rating ${w.rating}/5 • Rp${w.price.toLocaleString('id-ID')}
+          </div>
+        `;
+
+        item.onclick = () => {
+          document.querySelectorAll('.location-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+          activeLocationEl = item;
+          mapInstance.flyTo(w.coords, 13, { duration: 0.8 });
+          showDetail(w);
+        };
+
+        locationList.appendChild(item);
+      });
+
+      if (filtered.length > 0) {
+        const bounds = L.latLngBounds(filtered.map(w => w.coords));
+        mapInstance.fitBounds(bounds, { padding: [40, 40] });
+      } else {
+        mapInstance.setView([-7.8, 110.4], 10);
+        locationList.innerHTML = '<div class="location-item"><div class="location-item-name"><span><b>Tidak ada hasil</b></span></div><div class="location-item-info">Coba ubah filter atau kata kunci pencarian.</div></div>';
+      }
+    }
+
+    function showDetail(w) {
+      const popup = L.popup({
+        closeButton: false,
+        className: 'custom-popup',
+        offset: [0, -8]
+      }).setLatLng(w.coords).setContent(`
+        <div class="popup-header">${w.name}</div>
+        <div class="popup-rating">⭐ ${w.rating}/5</div>
+        <div class="popup-section">
+          <div class="popup-section-title">Deskripsi</div>
+          <div class="popup-section-text">${w.desc}</div>
+        </div>
+        <div class="popup-section">
+          <div class="popup-section-title">Detail Lengkap</div>
+          <div class="popup-section-text">${w.detail}</div>
+        </div>
+        <div class="popup-section">
+          <div class="popup-section-title">Aksesibilitas</div>
+          <div class="popup-section-text">${w.access}</div>
+        </div>
+        <div class="popup-section">
+          <div class="popup-section-title">Harga Tiket</div>
+          <div class="popup-section-text"><strong>Rp${w.price.toLocaleString('id-ID')}</strong></div>
+        </div>
+        <div class="popup-badges">
+          <span class="popup-badge">${w.cat}</span>
+          <span class="popup-badge">${w.kab}</span>
+        </div>
+        <a href="https://www.google.com/maps?q=${w.coords[0]},${w.coords[1]}" target="_blank" class="popup-btn">📍 Buka di Google Maps</a>
+      `).openOn(mapInstance);
+    }
+
+    function showAll() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('kabupatenFilter').value = 'all';
+      document.getElementById('sortFilter').value = 'rating-desc';
+      document.getElementById('ratingSlider').value = '0';
+      currentCategory = 'all';
+      currentRating = 0;
+      currentSort = 'rating-desc';
+      document.getElementById('ratingValue').textContent = '0.0';
+      document.querySelectorAll('.tag-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector('.tag-btn').classList.add('active');
+      updateMap();
+    }
+
+    function resetMap() {
+      if (mapInstance) {
+        mapInstance.setView([-7.8, 110.4], 10);
+      }
+      updateMap();
+    }
+
+    function clearFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('kabupatenFilter').value = 'all';
+      document.getElementById('sortFilter').value = 'rating-desc';
+      document.getElementById('ratingSlider').value = '4.5';
+      currentCategory = 'all';
+      currentSort = 'rating-desc';
+      currentRating = 4.5;
+      document.getElementById('ratingValue').textContent = '4.5';
+      document.querySelectorAll('.tag-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector('.tag-btn').classList.add('active');
+      updateMap();
+    }
+
+    const navbar = document.getElementById('navbar');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 24) navbar.classList.add('scrolled');
+      else navbar.classList.remove('scrolled');
+    });
+
+    mobileMenuBtn.addEventListener('click', () => {
+      navbar.classList.toggle('mobile-open');
+    });
+
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.addEventListener('click', () => navbar.classList.remove('mobile-open'));
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('show');
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
